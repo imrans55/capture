@@ -3,4 +3,5 @@
   become: true
   tasks:
     - name: python
-      command: sudo /usr/bin/python3 /opt/sasmob/thumb_cap.py
+      shell: sudo nohup /usr/bin/python3 /opt/sasmob/thumb_cap.py > /home/sasmob/logs/cap.log
+       
