@@ -1,7 +1,6 @@
 - hosts: localhost
   connection: local
-  become: true
+  #become: true
+
   tasks:
-    - name: python
-      shell: sudo nohup /usr/bin/python3 /opt/sasmob/thumb_cap.py > /home/sasmob/logs/cap.log
-       
+    - include: tasks/iot.yml
