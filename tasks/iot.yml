@@ -1,0 +1,71 @@
+- name: Required packages
+  become: yes
+  apt:
+    update_cache: yes
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - curl 
+      - supervisor
+  tags: skip
+
+- name: Installing Cloud SDK
+  become: yes
+  shell: echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+  tags: skip
+
+- name: Installing Cloud SDK ...
+  become: yes
+  shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+  #shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+  tags: skip
+
+- name: Installing Cloud SDK ... ... ...
+  become: yes
+  apt:
+    update_cache: true
+    name: google-cloud-sdk
+  tags: skip
+
+- name: Initialize gcloud
+  become: yes
+  command: gcloud auth activate-service-account --key-file /home/sasmob/lit_creds.json
+  tags: skip
+
+
+- name: Clone IOT node
+  copy:
+    src: cloud/roots.pem
+    dest: /opt/sasmob/roots.pem
+  tags: skip
+
+- name: Clone IOT node
+  copy:
+    src: cloud/cloud.py
+    dest: /opt/sasmob/cloud.py
+  tags: skip
+
+- name: GCS Keypair 
+  become:  yes
+  command: openssl req -x509 -newkey rsa:2048 -keyout /home/sasmob/rsa_private_gcs.pem -nodes -out /home/sasmob/rsa_cert_gcs.pem -subj "/CN=unused"
+  tags: skip
+
+- name: Register the key on GCS
+  become: yes
+  command: gcloud iot devices create jetson04 --project=littering-car --region=europe-west1 --registry=littering-producion01 --public-key path=/home/sasmob/rsa_cert_gcs.pem,type=rsa-x509-pem
+  ignore_errors: yes
+  tags: skip
+
+- name: Start MQTT
+  copy:
+    src: super/process.conf
+    dest: /etc/supervisor/conf.d/process.conf
+
+- name: start
+  become: yes
+  shell: sudo supervisorctl reread && sudo supervisorctl update 
+    
+ 
+    
+ 
