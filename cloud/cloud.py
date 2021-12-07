@@ -29,19 +29,11 @@ import os
 import random
 import ssl
 import time
-import shutil
-from google.cloud import storage
 
 import jwt
 import paho.mqtt.client as mqtt
-import paramiko
-
 
 # [END iot_mqtt_includes]
-
-cams = ["cam01", "cam02", "cam03"]
-config = "/home/sasmob/cloud/creds.json"
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.CRITICAL)
 
@@ -53,49 +45,7 @@ MAXIMUM_BACKOFF_TIME = 32
 
 # Whether to wait with exponential backoff before publishing.
 should_backoff = False
-router_ip = "192.168.203.254"
-router_username = "gps"
-router_password = "gps321"
-bucket_name = "production-setup-littering375jukm"
-cam_path = "/home/sasmob/cams/"
-def gps_data():
 
-    vals = []
-    starttime=time.time()
-    time.sleep(0.5 - ((time.time() - starttime) % 100))
-    ssh = paramiko.SSHClient()
-
-    # Load SSH host keys.
-    ssh.load_system_host_keys()
-    # Add SSH host key automatically if needed.
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    # Connect to router using username/password authentication.
-    ssh.connect(router_ip,
-                username=router_username,
-                password=router_password,
-                look_for_keys=False )
-
-    # Run command.
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    vals.append(timestamp + ";")
-    ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("/system gps monitor once")
-
-    output = ssh_stdout.readlines()
-    # Close connection.
-    ssh.close()
-
-    for line in output:
-        if "latitude" in line:
-            lat, lval = line.split()
-            vals.append(lval + ";")
-        if "longitude" in line:
-            log, loval = line.split()
-            vals.append(loval + "\n")
-    #print(vals)
-    gdata = ""
-    for ele in vals:
-        gdata += ele
-    return gdata
 
 # [START iot_mqtt_jwt]
 def create_jwt(project_id, private_key_file, algorithm):
@@ -115,9 +65,9 @@ def create_jwt(project_id, private_key_file, algorithm):
 
     token = {
         # The time that the token was issued at
-        "iat": datetime.datetime.utcnow(),
+        "iat": datetime.datetime.now(tz=datetime.timezone.utc),
         # The time the token expires.
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
+        "exp": datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=20),
         # The audience field should always be set to the GCP project id.
         "aud": project_id,
     }
@@ -169,17 +119,6 @@ def on_publish(unused_client, unused_userdata, unused_mid):
     """Paho callback when a message is sent to the broker."""
     print("on_publish")
 
-def bucket_upload(blob_name, file_path):
-    try:
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket(bucket_name)
-        blob = bucket.blob(blob_name)
-        blob.upload_from_filename(file_path)
-        return True
-
-    except Exception as e:
-        print(e)
-        return False
 
 def on_message(unused_client, unused_userdata, message):
     """Callback when the device receives a message on a subscription."""
@@ -193,9 +132,6 @@ def on_message(unused_client, unused_userdata, message):
         os.system("sudo zerotier-cli join 0cccb752f78029b4")
     if payload == "vpn_off":
         os.system("sudo zerotier-cli leave 0cccb752f78029b4")
-
-
-
 
 def get_client(
     project_id,
@@ -295,7 +231,7 @@ def listen_for_messages(
     # [START iot_listen_for_messages]
     global minimum_backoff_time
 
-    jwt_iat = datetime.datetime.utcnow()
+    jwt_iat = datetime.datetime.now(tz=datetime.timezone.utc)
     jwt_exp_mins = jwt_expires_minutes
     # Use gateway to connect to server
     client = get_client(
@@ -343,10 +279,10 @@ def listen_for_messages(
             minimum_backoff_time *= 2
             client.connect(mqtt_bridge_hostname, mqtt_bridge_port)
 
-        seconds_since_issue = (datetime.datetime.utcnow() - jwt_iat).seconds
+        seconds_since_issue = (datetime.datetime.now(tz=datetime.timezone.utc) - jwt_iat).seconds
         if seconds_since_issue > 60 * jwt_exp_mins:
             print("Refreshing token after {}s".format(seconds_since_issue))
-            jwt_iat = datetime.datetime.utcnow()
+            jwt_iat = datetime.datetime.now(tz=datetime.timezone.utc)
             client.loop()
             client.disconnect()
             client = get_client(
@@ -393,7 +329,7 @@ def send_data_from_bound_device(
     device_topic = "/devices/{}/{}".format(device_id, "state")
     gateway_topic = "/devices/{}/{}".format(gateway_id, "state")
 
-    jwt_iat = datetime.datetime.utcnow()
+    jwt_iat = datetime.datetime.now(tz=datetime.timezone.utc)
     jwt_exp_mins = jwt_expires_minutes
     # Use gateway to connect to server
     client = get_client(
@@ -441,10 +377,10 @@ def send_data_from_bound_device(
         )
         client.publish(device_topic, "{} : {}".format(device_id, payload))
 
-        seconds_since_issue = (datetime.datetime.utcnow() - jwt_iat).seconds
+        seconds_since_issue = (datetime.datetime.now(tz=datetime.timezone.utc) - jwt_iat).seconds
         if seconds_since_issue > 60 * jwt_exp_mins:
             print("Refreshing token after {}s").format(seconds_since_issue)
-            jwt_iat = datetime.datetime.utcnow()
+            jwt_iat = datetime.datetime.now(tz=datetime.timezone.utc)
             client = get_client(
                 project_id,
                 cloud_region,
@@ -525,7 +461,7 @@ def parse_command_line_args():
         help="MQTT bridge port.",
     )
     parser.add_argument(
-        "--num_messages", type=int, default=17280, help="Number of messages to publish."
+        "--num_messages", type=int, default=100, help="Number of messages to publish."
     )
     parser.add_argument(
         "--private_key_file", required=True, help="Path to private key file."
@@ -539,6 +475,7 @@ def parse_command_line_args():
         "--registry_id", required=True, help="Cloud IoT Core registry id"
     )
     parser.add_argument(
+        "--service_account_json",
         default=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
         help="Path to service account json file.",
     )
@@ -562,11 +499,11 @@ def mqtt_device_demo(args):
     global MAXIMUM_BACKOFF_TIME
 
     # Publish to the events or state topic based on the flag.
-    #sub_topic = "events" if args.message_type == "event" else "state"
+    sub_topic = "events" if args.message_type == "event" else "state"
 
-    mqtt_topic = "/devices/jetson03/events/projects/littering-car/topics/littering-production01_messages"
+    mqtt_topic = "/devices/{}/{}".format(args.device_id, sub_topic)
 
-    jwt_iat = datetime.datetime.utcnow()
+    jwt_iat = datetime.datetime.now(tz=datetime.timezone.utc)
     jwt_exp_mins = args.jwt_expires_minutes
     client = get_client(
         args.project_id,
@@ -599,14 +536,13 @@ def mqtt_device_demo(args):
             minimum_backoff_time *= 2
             client.connect(args.mqtt_bridge_hostname, args.mqtt_bridge_port)
 
-        payload = "ON"
-       # payload = "test"
+        payload = "{}/{}-payload-{}".format(args.registry_id, args.device_id, i)
         print("Publishing message {}/{}: '{}'".format(i, args.num_messages, payload))
         # [START iot_mqtt_jwt_refresh]
-        seconds_since_issue = (datetime.datetime.utcnow() - jwt_iat).seconds
+        seconds_since_issue = (datetime.datetime.now(tz=datetime.timezone.utc) - jwt_iat).seconds
         if seconds_since_issue > 60 * jwt_exp_mins:
             print("Refreshing token after {}s".format(seconds_since_issue))
-            jwt_iat = datetime.datetime.utcnow()
+            jwt_iat = datetime.datetime.now(tz=datetime.timezone.utc)
             client.loop()
             client.disconnect()
             client = get_client(
@@ -624,9 +560,12 @@ def mqtt_device_demo(args):
         # Publish "payload" to the MQTT topic. qos=1 means at least once
         # delivery. Cloud IoT Core also supports qos=0 for at most once
         # delivery.
-
+        client.publish(mqtt_topic, payload, qos=1)
 
         # Send events every second. State should not be updated as often
+        for i in range(0, 60):
+            time.sleep(1)
+            client.loop()
     # [END iot_mqtt_run]
 
 
