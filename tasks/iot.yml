@@ -1,7 +1,12 @@
 - name: host
   shell: hostname
   register: host
-      
+
+- name: Install paho
+  become: yes
+  pip:
+    name: paho-mqtt
+
 - name: Required packages
   become: yes
   apt:
