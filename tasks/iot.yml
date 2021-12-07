@@ -32,7 +32,7 @@
 
 - name: Initialize gcloud
   become: yes
-  command: gcloud auth activate-service-account --key-file /home/sasmob/lit_creds.json
+  command: gcloud auth activate-service-account --key-file /opt/sasmob/g_creds.json
   tags: skip
 
 
