@@ -61,7 +61,7 @@
 
 - name: Register the key on GCS
   become: yes
-  command: gcloud iot devices create {{ host.stdout }} --project=littering-car --region=europe-west1 --registry=Sasmob-devices --public-key path=/home/sasmob/rsa_cert_gcs.pem,type=rsa-x509-pem
+  command: gcloud iot devices create "{{ host.stdout }}" --project=littering-car --region=europe-west1 --registry=Sasmob-devices --public-key path=/home/sasmob/rsa_cert_gcs.pem,type=rsa-x509-pem
   ignore_errors: yes
   tags: skip
 
