@@ -48,7 +48,7 @@
 
 - name: Clone IOT node
   copy:
-    src: cloud/cloud.py
+    src: scripts/cloud.py
     dest: /opt/litter/cloud.py
   tags: skip
 
