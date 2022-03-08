@@ -4,7 +4,7 @@
 
 - name: Copy Cloud
   copy:
-    src: cloud/cloud.py
+    src: scripts/cloud.py
     dest: /opt/litter/cloud.py
 
 - name: copy process
