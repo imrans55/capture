@@ -4,8 +4,7 @@
 
 - name: Install paho
   become: yes
-  pip:
-    name: paho-mqtt
+  command: sudo python3 -m pip install paho-mqtt
 
 - name: Required packages
   become: yes
