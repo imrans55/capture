@@ -16,4 +16,4 @@
 
 - name: start process
   become: yes
-  command: sudo supervisorctl reread && sudo supervisorctl update
+  shell: sudo supervisorctl reread && sudo supervisorctl update
