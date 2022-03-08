@@ -1,0 +1,19 @@
+- name: host
+  shell: hostname
+  register: host
+
+- name: Copy Cloud
+  copy:
+    src: cloud/cloud.py
+    dest: /opt/litter/cloud.py
+
+- name: copy process
+  become: yes
+  copy:
+    src: scripts/process.conf
+    dest:  /etc/supervisor/conf.d/process.conf
+  tags: skip
+
+- name: start process
+  become: yes
+  command: sudo supervisorctl reread && sudo supervisorctl update

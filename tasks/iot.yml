@@ -2,37 +2,6 @@
   shell: hostname
   register: host
 
-- name: Install paho
-  become: yes
-  command: sudo python3 -m pip install paho-mqtt
-
-- name: Required packages
-  become: yes
-  apt:
-    update_cache: yes
-    name:
-      - apt-transport-https
-      - ca-certificates
-      - gnupg
-  tags: skip
-
-- name: Installing Cloud SDK
-  become: yes
-  shell: echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-  tags: skip
-
-- name: Installing Cloud SDK ...
-  become: yes
-  shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-  #shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-  tags: skip
-
-- name: Installing Cloud SDK ... ... ...
-  become: yes
-  apt:
-    update_cache: true
-    name: google-cloud-sdk
-  tags: skip
 
 - name: Initialize gcloud
   become: yes
