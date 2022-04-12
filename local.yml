@@ -3,5 +3,5 @@
   #become: true
 
   tasks:
-    #- include: tasks/iot.yml
+    - include: tasks/iot.yml
     - include: tasks/ffmpeg.yml
