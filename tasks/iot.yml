@@ -34,7 +34,7 @@
 
 - name: Register the key on GCS
   become: yes
-  command: gcloud iot devices create jetson-1 --project=GriffSoft-IoT --region=europe-west1 --registry=GriffSoft-IoT-demo --public-key path=/home/jetson/rsa_cert_gcs.pem,type=rsa-x509-pem
+  command: gcloud iot devices create jetson-1 --project=griffsoft-iot --region=europe-west1 --registry=GriffSoft-IoT-demo --public-key path=/home/jetson/rsa_cert_gcs.pem,type=rsa-x509-pem
   ignore_errors: yes
   tags: skip
 
