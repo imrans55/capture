@@ -3,22 +3,22 @@
   register: host
 
 
-- name: Initialize gcloud
-  become: yes
-  command: gcloud auth activate-service-account --key-file /opt/keys/g_creds.json
-  tags: skip
+#- name: Initialize gcloud
+  #become: yes
+  #command: gcloud auth activate-service-account --key-file /opt/keys/g_creds.json
+  #tags: skip
 
 
 - name: Clone IOT node
   copy:
     src: scripts/roots.pem
-    dest: /opt/litter/roots.pem
+    dest: /home/jetson/roots.pem
   tags: skip
 
 - name: Clone IOT node
   copy:
     src: scripts/cloud.py
-    dest: /opt/litter/cloud.py
+    dest: /home/jetson/cloud.py
   tags: skip
 
   
