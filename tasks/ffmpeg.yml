@@ -5,7 +5,7 @@
 - name: Copy Cloud
   copy:
     src: scripts/cloud.py
-    dest: /opt/litter/cloud.py
+    dest: /home/jetson/cloud.py
 
 - name: copy process
   become: yes
